@@ -21,7 +21,9 @@ app.get('/health', (req, res) => {
 
 app.get('/search', async (req, res) => {
     try {
+      // Text to use in query.
       const text = req.query.text;
+      // LookingGlass user id used to fetch tokens from db which are used in Twitter API request.
       const viewerId = req.query.viewerId;
       const viewer = await Users.findOne({id: viewerId});
       const client = new TwitterClient(viewer);
