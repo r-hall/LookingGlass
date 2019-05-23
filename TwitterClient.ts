@@ -14,23 +14,43 @@ class TwitterClient {
         });
     }
 
-    // Make a call to the Twitter API to retrieve Twitter users matching a given query.
+    // Retrieve Twitter users matching a given query.
     searchUsers(query: string) {
         const endpoint = 'users/search';
         const numUsers = 20;
         return new Promise( async (resolve, reject) => {
             try {
-                const users = await this.client.get(
+                let users = await this.client.get(
                     endpoint, 
                     {
                         'q': query,
                         'count': numUsers
                     }
                 );
-                resolve(JSON.stringify(users));
+                resolve(users);
             } catch(err) {
                 console.log('ERROR in searchUsers', err);
                 reject(err);
+            }
+        })
+    }
+    
+    // Return 200 most recent likes of a given user.
+    getLikes(userId: string) {
+        const endpoint = 'favorites/list';
+        const params = {
+            'user_id': userId,
+            'count': 200,
+            'include_entities': true,
+            'tweet_mode': 'extended'
+        };
+        return new Promise( async (resolve, reject) => {
+            try {
+                let likes = await this.client.get(endpoint, params);
+                resolve(likes);
+            } catch(error) {
+                console.log('error in twitterFetchLikes', error)
+                reject(error);
             }
         })
     }
