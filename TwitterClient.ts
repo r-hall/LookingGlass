@@ -1,6 +1,7 @@
 const Twitter = require('twitter');
 const authAPI = require('./config/twitter.js');
 
+// Client that interacts with the Twitter API.
 class TwitterClient {
     client: any;
     searchUsersEndpoint: string;
@@ -22,7 +23,6 @@ class TwitterClient {
     searchUsers(query: string) {
         return new Promise( async (resolve, reject) => {
             try {
-                // Twitter API call.
                 const users = await this.client.get(
                     this.searchUsersEndpoint, 
                     {
