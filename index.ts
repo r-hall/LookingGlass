@@ -64,15 +64,31 @@ app.post('/friends', async (req, res) => {
     let viewer = await Users.findOne({id: viewerId});
     let friends = await Friends.findOne({id: viewerId});
     let client = new TwitterClient(viewer);
-    let friend = await client.addFriend(friendId, viewerId, viewer.friends);
+    let friend = await client.addFriend(friendId, viewerId, friends);
     res.writeHead(201);
-    res.end(friend);
+    res.end(JSON.stringify(friend));
   } catch(err) {
     console.log('ERROR in post /friends', err);
     res.writeHead(404);
     res.end(err);
   };
 });
+
+app.get('/friends', async (req, res) => {
+  try {
+    let userId = req.query.userId;
+    let viewerId = req.query.viewerId;
+    let viewer = await Users.findOne({id: viewerId});
+    let client = new TwitterClient(viewer)
+    let friends = await client.getFriends(userId, viewerId);
+    res.writeHead(200)
+    res.end(JSON.stringify(friends))
+  } catch(err) {
+    console.log('ERROR in friendsAPI', err);
+    res.writeHead(404);
+    res.end(err);
+  }
+})
 
 app.listen(port, () => {
 	console.log(`listening on port ${port}`);
