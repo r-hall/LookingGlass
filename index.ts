@@ -3,6 +3,7 @@ import bodyParser = require('body-parser');
 import morgan = require('morgan');
 import cors = require('cors');
 const Users = require('./db.ts').Users;
+const Friends = require('./db.ts').Friends;
 const TwitterClient = require('./TwitterClient.ts');
 const port = process.env.PORT || 3001;
 
@@ -34,8 +35,8 @@ app.get('/search', async (req, res) => {
       console.log('ERROR in /search', err);
       res.writeHead(404);
       res.end(err);
-    }
-})
+    };
+});
 
 app.get('/likes', async (req, res) => {
   try {
@@ -48,6 +49,26 @@ app.get('/likes', async (req, res) => {
     res.writeHead(200);
     res.end(JSON.stringify(likes));
   } catch(err) {
+    res.writeHead(404);
+    res.end(err);
+  };
+});
+
+app.post('/friends', async (req, res) => {
+  try {
+    // Id of the friend to be added.
+    let friendId = req.query.friendId;
+    // LookingGlass user for whom the friend will be added. 
+    let viewerId = req.query.viewerId;
+    // TODO: Combine Users.findOne and Friends.findOne into one promise.
+    let viewer = await Users.findOne({id: viewerId});
+    let friends = await Friends.findOne({id: viewerId});
+    let client = new TwitterClient(viewer);
+    let friend = await client.addFriend(friendId, viewerId, viewer.friends);
+    res.writeHead(201);
+    res.end(friend);
+  } catch(err) {
+    console.log('ERROR in post /friends', err);
     res.writeHead(404);
     res.end(err);
   };
