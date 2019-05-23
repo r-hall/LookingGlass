@@ -4,8 +4,6 @@ const authAPI = require('./config/twitter.js');
 // Client that interacts with the Twitter API.
 class TwitterClient {
     client: any;
-    searchUsersEndpoint: string;
-    searchUsersCount : number;
     constructor (viewer: any) {
         // Creation of Twitter client.
         this.client = new Twitter({
@@ -14,20 +12,19 @@ class TwitterClient {
             access_token_key: viewer.twitterTokenKey,
             access_token_secret: viewer.twitterTokenSecret
         });
-        // Parameters for searchUsers.
-        this.searchUsersEndpoint = 'users/search';
-        this.searchUsersCount = 20;
     }
 
     // Make a call to the Twitter API to retrieve Twitter users matching a given query.
     searchUsers(query: string) {
+        const endpoint = 'users/search';
+        const numUsers = 20;
         return new Promise( async (resolve, reject) => {
             try {
                 const users = await this.client.get(
-                    this.searchUsersEndpoint, 
+                    endpoint, 
                     {
                         'q': query,
-                        'count': this.searchUsersCount
+                        'count': numUsers
                     }
                 );
                 resolve(JSON.stringify(users));
