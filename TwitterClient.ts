@@ -13,7 +13,8 @@ const boundLikes = require('./utils/boundInput.js').boundLikes;
 const computeMinId = require('./utils/computeMinId.js').computeMinId;
 const getListId = require('./utils/getListId.js').getListId;
 
-const refreshFriendsQueue = require('./config/awsURLs.js').refreshFriendsQueue;
+const rankFriends = require('./rankFriends/rankFriends.js').rankFriends;
+
 
 // Load the AWS SDK for Node.js
 var AWS = require('aws-sdk');
@@ -140,7 +141,7 @@ class TwitterClient {
                 'screen_name': friend.screen_name,
                 'profile_image_url_https': friend.profile_image_url_https,
                 'followers_count': friend.followers_count,
-                'likes': 0,
+                'engagementValue': 0.0,
                 'description': friend.description,
                 'verified': friend.verified
             };
@@ -153,7 +154,7 @@ class TwitterClient {
         return new Promise( async (resolve, reject) => {
             try {
                 let friend = await addFriendTwitter(friendId);
-                // addFriendDB(friend, viewerId, oldFriends);
+                addFriendDB(friend, viewerId, oldFriends);
                 resolve(friend);
             } catch(err) {
                 console.log('ERROR in addFriend', err);
@@ -235,28 +236,29 @@ class TwitterClient {
       };
 
     // Return friends of a given user.
+    // TODO: move rankFriends to a separate server or serverless configuration.
     getFriends(userId: string, viewerId: string) {
         return new Promise( async (resolve, reject) => {
             try {
-                // let message = viewerId + '.' + userId;
-                // let user = await Friends.findOne({id: userId});
-                // if (user && user.friends.length) {
-                //     let friends = user.friends;
-                //     let refreshedFriendsDate = +user.refreshedFriendsDate;
-                //     let currentDate = +new Date();
-                //     let hours = Number(Math.abs(refreshedFriendsDate - currentDate) / 36e5);
-                //     if (hours > 24) {
-                //         // this.sendAWSMessageRequest(message, refreshFriendsQueue);
-                //         resolve(friends);
-                //     } else {
-                //         resolve(friends);
-                //     };
-                // } else {
-                    // this.sendAWSMessageRequest(message, refreshFriendsQueue);
+                let user = await Friends.findOne({id: userId});
+                if (user && user.friends.length) {
+                    let friends = user.friends;
+                    let refreshedFriendsDate = +user.refreshedFriendsDate;
+                    let currentDate = +new Date();
+                    let hours = Number(Math.abs(refreshedFriendsDate - currentDate) / 36e5);
+                    if (hours > 24) {
+                        resolve(friends);
+                    } else {
+                        rankFriends(viewerId, user);
+                        resolve(friends);
+                    };
+                } else {
+                    let rankedFriends = await rankFriends(viewerId, user);
+                    resolve(rankedFriends);
                     let friend_ids = await this._fetchTwitterFriendIds(userId);
                     let friends = await this._fetchTwitterUserObjects(friend_ids, 0, []);
                     resolve(friends);
-                // };
+                };
             } catch(error) {
                 console.log('error in getFriends');
                 reject(error);
