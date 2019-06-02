@@ -109,14 +109,3 @@ export const rankFriends = (authenticatingUser: any, user: any) => {
 		};
 	});
 };
-
-const main = async () => {
-    let authenticatingUser = '1129503751901831168';
-    let user = '911297187664949248';
-    let rankedFriends = await exports.rankFriends(authenticatingUser, user);
-    for (let i = 0; i < 10; i++) {
-        console.log('friend', i);
-        console.log(rankedFriends[i]);
-    }
-};
-main();
