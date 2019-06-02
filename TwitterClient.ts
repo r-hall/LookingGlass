@@ -1,5 +1,6 @@
 // Twitter library
 const Twitter = require('twitter');
+const schedule = require('node-schedule');
 // Twitter application authentication credentials
 const authAPI = require('./config/twitter.js');
 // Mongoose models
@@ -7,7 +8,7 @@ const Friends = require('./db.js').Friends;
 const Users = require('./db.js').Users;
 // const Lists = require('./db.js').Lists;
 // Utils
-const calculateNextDate = require('./utils/calculateNextDate.js').calculateNextDate;
+const calculateDate = require('./utils/calculateDate.js').calculateDate;
 const boundLikes = require('./utils/boundInput.js').boundLikes;
 const computeMinId = require('./utils/computeMinId.js').computeMinId;
 const getListId = require('./utils/getListId.js').getListId;
@@ -394,14 +395,25 @@ class TwitterClient {
         });
     }
 
+    // TODO: Move scheduling of list building to separate server(s) so that functionality can be scaled independently.
+    // Convert function to send message to that/those server(s).
+    scheduleListBuilding(id: string, members: any) {
+        const maxAddsPerDay = 400;
+        const numBatches = Math.ceil(members.length / maxAddsPerDay);
+        for (let i = 0; i < numBatches; i++) {
+            let currentMembers = members.slice(maxAddsPerDay * i, maxAddsPerDay * (i + 1));
+            let date = calculateDate(i+1);
+            // TODO: Determine memory usage from keeping TwitterClients alive.
+            schedule.scheduleJob(date, this.addMembersToList.bind(this, id, currentMembers));
+        }
+    }
+
     async requestList(name: string, userId: string, listCreatorId: string) {
         return new Promise( async (resolve, reject) => {
             try {
-                // Create list.
                 let list = await this.createList(name);
-                // Fetch members to add to list.
                 let friends: any = await this._fetchTwitterFriendIds(userId);
-                this.addMembersToList(getListId(list), friends);
+                this.scheduleListBuilding(getListId(list), friends);
                 // Add list to db.
                 resolve(list);
             } catch(error) {
@@ -410,46 +422,6 @@ class TwitterClient {
             };
         });
     };
-
-
-    // async requestList(name: string, userId: string, viewerId: string) {
-    //     try {
-    //         // Ensure the rate limit for GET lists/statuses is not exceeded.
-    //         const maxLists = 50;
-    //         // Add a safe amount to list each day, assuming some members are added by the user outside of this app.
-    //         const maxDailyInsertions = 400;
-    //         let viewer = await Users.findOne({id: viewerId});
-    //         // TODO: What if they aren't? Need to find a suitable user to build the list.
-    //         if (viewer.numberOfLists < maxLists) {
-    //             let params = {
-    //                 'user_id': userId,
-    //                 'count': 5000,
-    //                 'cursor': -1,
-    //                 'stringify_ids': true
-    //             };
-    //             let friends: any = await this._fetchTwitterFriendIds(userId, []);
-    //             const batches = Math.ceil(friends.length / maxDailyInsertions);
-    //             let currentDate = new Date();
-    //             let dateUsed = currentDate > viewer.lastListBuild ? currentDate : viewer.lastListBuild;
-    //             let endBuildDate = calculateNextDate(dateUsed, batches);
-    //             let listQuery = { 'id': name };
-    //             let listUpdateObject = {
-    //                 'id': name,
-    //                 'done': false,
-    //                 'batches': batches,
-    //                 'friends': friends,
-    //                 'currentBatch': 0,
-    //             }
-    //             Lists.findOneAndUpdate(listQuery, listUpdateObject, {upsert: true});
-    //             let userQuery = { 'id': viewerId };
-    //             let userUpdateObject = { 'lastListBuild': endBuildDate };
-    //             Users.findOneAndUpdate(userQuery, userUpdateObject);
-    //             scheduleJobs(sqs, name, viewerId, dateUsed, batches); // schedule messages to lambda function that will build list
-    //         }
-    //     } catch(err) {
-    //         console.log('error in requestList', err);
-    //     }
-    // }
 };
 
 module.exports = TwitterClient;
