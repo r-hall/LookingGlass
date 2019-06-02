@@ -11,6 +11,7 @@ db.once('open', () => {
   console.log('we are connected to lookingglass!');
 });
 
+// TODO: make separate file for each schema and store them in db folder.
 const userSchema : mongoose.Schema = new mongoose.Schema({
 	id: {type: String, index: true, unique: true},
 	twitterTokenKey: {type: String, default: ''},
@@ -39,7 +40,7 @@ let friendSchema : mongoose.Schema = new mongoose.Schema({
 		description: String,
 		verified: Boolean
 	}],
-	refreshedFriendsDate: {type: Date, default: '1/1/2018'}
+	refreshedFriendsDate: {type: Date, default: '1/1/2019'}
 });
 
 interface Friend {
@@ -54,14 +55,31 @@ interface Friend {
 }
 
 interface IFriend extends mongoose.Document {
-  id: string;
+  	id: string;
 	friends: Array<Friend>;
 	refreshedFriendsDate: Date;
 }
 
 const FriendModel: mongoose.Model<IFriend> = mongoose.model<IFriend>('Friend', friendSchema);
 
+const listSchema : mongoose.Schema = new mongoose.Schema({
+	id: {type: String, index: true, unique: true},
+	name: String,
+	endDate: String,
+	refreshedDate: {type: Date, default: '1/1/2019'}
+})
+
+interface IList extends mongoose.Document {
+	id: string;
+	name: string;
+	endDate: Date;
+	refreshedDate: Date;
+}
+
+const ListModel: mongoose.Model<IList> = mongoose.model<IList>('List', listSchema);
+
 module.exports = {
 		'Users': UserModel,
-		'Friends': FriendModel
+		'Friends': FriendModel,
+		'Lists': ListModel
 };
