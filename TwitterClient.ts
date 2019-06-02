@@ -10,6 +10,7 @@ const Users = require('./db.js').Users;
 const calculateNextDate = require('./utils/calculateNextDate.js').calculateNextDate;
 const boundLikes = require('./utils/boundInput.js').boundLikes;
 const computeMinId = require('./utils/computeMinId.js').computeMinId;
+const getListId = require('./utils/getListId.js').getListId;
 
 const refreshFriendsQueue = require('./config/awsURLs.js').refreshFriendsQueue;
 
@@ -324,16 +325,17 @@ class TwitterClient {
     }
 
     // Get 200 tweets from timeline given list.
-    getListTimeline(list: any) {
+    getListTimeline(list: any, maxId?: string, minId?: string) {
         // TODO: Make list interface.
         return new Promise( async (resolve, reject) => {
             try {
                 const endpoint = 'lists/statuses';
-                let params = {
-                    'slug': list.slug,
-                    'owner_screen_name': list.owner_screen_name,
-                    'count': 200
+                let params: any = {
+                    'list_id': getListId(list),
+                    'count': 200,
                 }
+                if (maxId) { params['max_id'] = maxId; };
+                if (minId) { params['since_id'] = minId; };
                 let timeline = await this.client.get(endpoint, params);
                 resolve(timeline);
             } catch(err) {
@@ -358,6 +360,56 @@ class TwitterClient {
             }
         })
     }
+
+    createList(name: string) {
+        return new Promise( async (resolve, reject) => {
+            try {
+                const endpoint = 'lists/create';
+                const params = {
+                    'name': name
+                }
+                let list = await this.client.post(endpoint, params);
+                resolve(list);
+            } catch(error) {
+                console.log('error in createList');
+                reject(error);
+            };
+        });
+    };
+
+    addMembersToList(id: string, members: any) {
+        return new Promise( async (resolve, reject) => {
+            try {
+                const endpoint = 'lists/members/create_all';
+                const params = {
+                    'list_id': id,
+                    'user_id': members.join(',')
+                }
+                let list = await this.client.post(endpoint, params);
+                resolve(list);
+            } catch(error) {
+                console.log('error in createList');
+                reject(error);
+            };
+        });
+    }
+
+    async requestList(name: string, userId: string, listCreatorId: string) {
+        return new Promise( async (resolve, reject) => {
+            try {
+                // Create list.
+                let list = await this.createList(name);
+                // Fetch members to add to list.
+                let friends: any = await this._fetchTwitterFriendIds(userId);
+                this.addMembersToList(getListId(list), friends);
+                // Add list to db.
+                resolve(list);
+            } catch(error) {
+                console.log('error in requestList');
+                reject(error);
+            };
+        });
+    };
 
 
     // async requestList(name: string, userId: string, viewerId: string) {
