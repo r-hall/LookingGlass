@@ -15,15 +15,13 @@ db.once('open', () => {
 const userSchema : mongoose.Schema = new mongoose.Schema({
 	id: {type: String, index: true, unique: true},
 	twitterTokenKey: {type: String, default: ''},
-	twitterTokenSecret: {type: String, default: ''},
-	tokenNumber: Number
+	twitterTokenSecret: {type: String, default: ''}
 });
 
 interface IUser extends mongoose.Document {
   id: string;
   twitterTokenKey: string;
   twitterTokenSecret: string;
-  tokenNumber: number;
 }
 
 const UserModel: mongoose.Model<IUser> = mongoose.model<IUser>('User', userSchema);
@@ -64,7 +62,9 @@ const FriendModel: mongoose.Model<IFriend> = mongoose.model<IFriend>('Friend', f
 
 const listSchema : mongoose.Schema = new mongoose.Schema({
 	id: {type: String, index: true, unique: true},
-	name: String,
+	name: {type: String, index: true, unique: true},
+	twitterTokenKey: String, 
+	twitterTokenSecret: String,
 	endDate: String,
 	refreshedDate: {type: Date, default: '1/1/2019'}
 })
@@ -72,14 +72,31 @@ const listSchema : mongoose.Schema = new mongoose.Schema({
 interface IList extends mongoose.Document {
 	id: string;
 	name: string;
+	twitterTokenKey: string;
+	twitterTokenSecret: string;
 	endDate: Date;
 	refreshedDate: Date;
 }
 
 const ListModel: mongoose.Model<IList> = mongoose.model<IList>('List', listSchema);
 
+const userListSchema : mongoose.Schema = new mongoose.Schema({
+	id: {type: String, index: true, unique: true},
+	lists: [String],
+	endDate: Date,
+})
+
+interface IUserList extends mongoose.Document {
+	id: string;
+	lists: Array<string>;
+	endDate: Date;
+}
+
+const UserListModel: mongoose.Model<IUserList> = mongoose.model<IUserList>('UserList', userListSchema);
+
 module.exports = {
 		'Users': UserModel,
 		'Friends': FriendModel,
-		'Lists': ListModel
+		'Lists': ListModel,
+		'UserLists': UserListModel
 };
