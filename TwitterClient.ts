@@ -255,9 +255,6 @@ class TwitterClient {
                 } else {
                     let rankedFriends = await rankFriends(viewerId, user);
                     resolve(rankedFriends);
-                    let friend_ids = await this._fetchTwitterFriendIds(userId);
-                    let friends = await this._fetchTwitterUserObjects(friend_ids, 0, []);
-                    resolve(friends);
                 };
             } catch(error) {
                 console.log('error in getFriends');
