@@ -1,6 +1,5 @@
 const TwitterClient = require('../TwitterClient.js');
-// const Users = require('../db.js').Users;
-// const Friends = require('../db.js').Friends;
+const Friends = require('../db.js').Friends;
 
 interface Store {
 	[key: string]: any;
@@ -95,13 +94,13 @@ export const rankFriends = (authenticatingUser: any, user: any) => {
                 rankedFriends.push(temp);
             };
             rankedFriends.sort(compareUserFriends);
-			// let query = { 'id': user };
-			// let updateObject = {
-			// 	'id': user,
-			// 	'friends': rankedFriends,
-			// 	'refreshedFriendsDate': new Date()
-			// };
-			// await Friends.findOneAndUpdate(query, updateObject, {upsert: true});
+			let query = { 'id': user };
+			let updateObject = {
+				'id': user,
+				'friends': rankedFriends,
+				'refreshedFriendsDate': new Date()
+			};
+			await Friends.findOneAndUpdate(query, updateObject, {upsert: true});
 			resolve(rankedFriends);
 		} catch(error) {
 			console.log('error in rankFriends', error);
